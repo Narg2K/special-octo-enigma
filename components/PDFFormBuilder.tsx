@@ -533,24 +533,48 @@ const PDFFormBuilder: React.FC<PDFFormBuilderProps> = ({
   return (
     <div className="fixed inset-0 z-[1500] flex flex-col bg-slate-900">
       {/* Header */}
-      <div className="bg-[#264f36] px-4 md:px-6 py-4 flex items-center justify-between shrink-0">
-        <div>
-          <h2 className="text-white font-black uppercase tracking-tighter text-lg leading-tight">{certConfig.name}</h2>
-          <p className="text-emerald-300 text-[10px] font-bold uppercase tracking-widest">
-            {mode === 'edit' ? 'Éditeur de champs PDF' : `Remplissage — ${employee?.name}`}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {mode === 'fill' && !savedPdfUrl && error && (
-            <span className="text-red-300 text-[10px] font-bold max-w-xs truncate">{error}</span>
-          )}
-          <button onClick={() => setScale(s => Math.max(0.5, s - 0.25))} className="p-2 bg-white/10 rounded-xl text-white hover:bg-white/20 transition-colors">
-            <ZoomOut size={16} />
+      <div className="bg-[#264f36] shrink-0 border-b border-black/20">
+        <div className="px-3 md:px-5 h-16 flex items-center gap-2 md:gap-3">
+
+          {/* Back button */}
+          <button
+            onClick={onClose}
+            className="flex items-center gap-1.5 px-3 py-2 bg-black/20 hover:bg-black/30 text-white rounded-xl transition-colors shrink-0"
+          >
+            <ArrowLeft size={16} />
+            <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Retour</span>
           </button>
-          <span className="text-white text-xs font-black w-10 text-center">{Math.round(scale * 100)}%</span>
-          <button onClick={() => setScale(s => Math.min(2.5, s + 0.25))} className="p-2 bg-white/10 rounded-xl text-white hover:bg-white/20 transition-colors">
-            <ZoomIn size={16} />
-          </button>
+
+          {/* Title */}
+          <div className="flex-1 min-w-0 px-1">
+            <h2 className="text-white font-black uppercase tracking-tighter text-sm md:text-base leading-none truncate">
+              {certConfig.name}
+            </h2>
+            <p className="text-emerald-300 text-[9px] font-bold uppercase tracking-widest mt-0.5 truncate">
+              {mode === 'edit' ? 'Éditeur de champs PDF' : employee?.name}
+            </p>
+          </div>
+
+          {/* Zoom group */}
+          <div className="flex items-center bg-black/20 rounded-xl shrink-0 overflow-hidden">
+            <button
+              onClick={() => setScale(s => Math.max(0.5, s - 0.25))}
+              className="p-2.5 text-white hover:bg-white/10 transition-colors"
+            >
+              <ZoomOut size={15} />
+            </button>
+            <span className="text-white text-[11px] font-black w-9 text-center select-none">
+              {Math.round(scale * 100)}%
+            </span>
+            <button
+              onClick={() => setScale(s => Math.min(2.5, s + 0.25))}
+              className="p-2.5 text-white hover:bg-white/10 transition-colors"
+            >
+              <ZoomIn size={15} />
+            </button>
+          </div>
+
+          {/* Fill mode actions */}
           {mode === 'fill' && !savedPdfUrl && (
             <>
               <input
@@ -560,6 +584,8 @@ const PDFFormBuilder: React.FC<PDFFormBuilderProps> = ({
                 className="hidden"
                 onChange={handleUploadExistingPdf}
               />
+
+              {/* Date */}
               <input
                 type="date"
                 value={date}
@@ -571,30 +597,78 @@ const PDFFormBuilder: React.FC<PDFFormBuilderProps> = ({
                     return updated;
                   });
                 }}
-                className="bg-white/10 border border-white/20 text-white rounded-xl px-3 py-2 text-[10px] font-black outline-none"
+                className="bg-black/20 border border-white/20 text-white rounded-xl px-3 py-2 text-[11px] font-bold outline-none focus:border-white/50 shrink-0 hidden md:block"
               />
+
+              {/* Import PDF */}
               <button
                 onClick={() => existingPdfInputRef.current?.click()}
                 disabled={uploadingExisting}
-                className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors disabled:opacity-40"
+                className="flex items-center gap-1.5 px-3 py-2.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors disabled:opacity-40 shrink-0"
               >
-                {uploadingExisting ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
-                Importer PDF
+                {uploadingExisting ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
+                <span className="hidden sm:inline">Importer</span>
               </button>
+
+              {/* Valider — primary CTA */}
               <button
                 onClick={handleFillAndSave}
                 disabled={saving}
-                className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors disabled:opacity-40"
+                className="flex items-center gap-1.5 px-4 py-2.5 bg-white text-[#264f36] rounded-xl text-[10px] font-black uppercase tracking-widest transition-all hover:bg-emerald-50 active:scale-95 disabled:opacity-40 shrink-0 shadow-lg"
               >
-                {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
                 Valider
               </button>
             </>
           )}
-          <button onClick={onClose} className="p-2 bg-white/10 rounded-xl text-white hover:bg-white/20 transition-colors">
-            <X size={18} />
+
+          {/* Edit mode: save */}
+          {mode === 'edit' && (
+            <button
+              onClick={handleSaveTemplate}
+              disabled={saving || !templatePath}
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-white text-[#264f36] rounded-xl text-[10px] font-black uppercase tracking-widest transition-all hover:bg-emerald-50 active:scale-95 disabled:opacity-40 shrink-0 shadow-lg"
+            >
+              {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+              Sauvegarder
+            </button>
+          )}
+
+          {/* Close */}
+          <button
+            onClick={onClose}
+            className="p-2.5 bg-black/20 hover:bg-black/30 text-white rounded-xl transition-colors shrink-0"
+          >
+            <X size={17} />
           </button>
         </div>
+
+        {/* Date row on mobile (fill mode) */}
+        {mode === 'fill' && !savedPdfUrl && (
+          <div className="md:hidden px-3 pb-2.5 flex items-center gap-2">
+            <span className="text-emerald-300 text-[9px] font-black uppercase tracking-widest">Date :</span>
+            <input
+              type="date"
+              value={date}
+              onChange={e => {
+                setDate(e.target.value);
+                setTextValues(prev => {
+                  const updated = { ...prev };
+                  fields.filter(f => f.type === 'date').forEach(f => { updated[f.id] = e.target.value; });
+                  return updated;
+                });
+              }}
+              className="bg-black/20 border border-white/20 text-white rounded-lg px-3 py-1.5 text-[11px] font-bold outline-none"
+            />
+          </div>
+        )}
+
+        {/* Error bar */}
+        {error && !savedPdfUrl && (
+          <div className="px-4 py-2 bg-red-900/50 border-t border-red-800/40">
+            <span className="text-red-300 text-[10px] font-bold">{error}</span>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-1 overflow-hidden">
