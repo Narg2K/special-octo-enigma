@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { X, MousePointer, CheckSquare, PenLine, Trash2, Save, Upload, Loader2, ZoomIn, ZoomOut, FileEdit, Type, Calendar, User, UserCircle, ArrowLeft } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
-import pdfjsWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import pdfjsWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.js?url';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { Employee, EmployeeCert, GlobalCertConfig, PDFField } from '../types';
 import { supabase } from '../services/apiService';
