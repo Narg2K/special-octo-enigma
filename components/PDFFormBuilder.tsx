@@ -119,10 +119,12 @@ const PDFFormBuilder: React.FC<PDFFormBuilderProps> = ({
     (async () => {
       try {
         const { data: { publicUrl } } = supabase.storage.from('pdf-templates').getPublicUrl(templatePath);
+        const response = await fetch(publicUrl);
+        const arrayBuffer = await response.arrayBuffer();
         const pdf = await pdfjsLib.getDocument({
-          url: publicUrl,
+          data: arrayBuffer,
           cMapPacked: true,
-          cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/cmaps/`,
+          disableFontFace: false,
         }).promise;
         pdfDocRef.current = pdf;
         await renderPages(pdf);
