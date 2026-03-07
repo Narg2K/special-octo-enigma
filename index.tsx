@@ -8,6 +8,13 @@ if (typeof (Promise as any).withResolvers === 'undefined') {
   };
 }
 
+// Polyfill for URL.parse (not supported in older Safari/iPadOS)
+if (typeof (URL as any).parse === 'undefined') {
+  (URL as any).parse = function (url: string, base?: string) {
+    try { return new URL(url, base); } catch { return null; }
+  };
+}
+
 import './index.css';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
