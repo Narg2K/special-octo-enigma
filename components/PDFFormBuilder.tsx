@@ -586,19 +586,22 @@ const PDFFormBuilder: React.FC<PDFFormBuilderProps> = ({
               />
 
               {/* Date */}
-              <input
-                type="date"
-                value={date}
-                onChange={e => {
-                  setDate(e.target.value);
-                  setTextValues(prev => {
-                    const updated = { ...prev };
-                    fields.filter(f => f.type === 'date').forEach(f => { updated[f.id] = e.target.value; });
-                    return updated;
-                  });
-                }}
-                className="bg-black/20 border border-white/20 text-white rounded-xl px-3 py-2 text-[11px] font-bold outline-none focus:border-white/50 shrink-0 hidden md:block"
-              />
+              <div className="hidden md:flex items-center gap-2 bg-black/20 border border-white/20 rounded-xl px-3 py-2 shrink-0 focus-within:border-white/50 transition-colors">
+                <Calendar size={13} className="text-emerald-300 shrink-0" />
+                <input
+                  type="date"
+                  value={date}
+                  onChange={e => {
+                    setDate(e.target.value);
+                    setTextValues(prev => {
+                      const updated = { ...prev };
+                      fields.filter(f => f.type === 'date').forEach(f => { updated[f.id] = e.target.value; });
+                      return updated;
+                    });
+                  }}
+                  className="bg-transparent text-white text-[11px] font-bold outline-none w-32"
+                />
+              </div>
 
               {/* Import PDF */}
               <button
@@ -634,13 +637,6 @@ const PDFFormBuilder: React.FC<PDFFormBuilderProps> = ({
             </button>
           )}
 
-          {/* Close */}
-          <button
-            onClick={onClose}
-            className="p-2.5 bg-black/20 hover:bg-black/30 text-white rounded-xl transition-colors shrink-0"
-          >
-            <X size={17} />
-          </button>
         </div>
 
         {/* Date row on mobile (fill mode) */}

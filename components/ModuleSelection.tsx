@@ -7,10 +7,11 @@ import {
   Package,
   Leaf,
   Settings,
-  LogOut
+  LogOut,
+  ShieldCheck
 } from 'lucide-react';
 
-export type ModuleType = 'training' | 'product' | 'eco';
+export type ModuleType = 'training' | 'product' | 'eco' | 'admin';
 
 interface ModuleSelectionProps {
   onSelect: (module: ModuleType) => void;
@@ -21,6 +22,8 @@ interface ModuleSelectionProps {
 }
 
 const ModuleSelection: React.FC<ModuleSelectionProps> = ({ onSelect, user, onOpenSettings, onOpenSupport, onLogout }) => {
+  const isAdmin = user?.role === 'Admin';
+
   const modules = [
     {
       id: 'training' as const,
@@ -28,6 +31,7 @@ const ModuleSelection: React.FC<ModuleSelectionProps> = ({ onSelect, user, onOpe
       desc: 'Gestion de la polyvalence, validations SOC et suivi des certificats légaux.',
       icon: GraduationCap,
       active: true,
+      adminOnly: false,
       color: 'bg-emerald-50 text-[#264f36]'
     },
     {
@@ -36,6 +40,7 @@ const ModuleSelection: React.FC<ModuleSelectionProps> = ({ onSelect, user, onOpe
       desc: 'Inventaires, stocks, DLC et pertes restaurant.',
       icon: Package,
       active: false,
+      adminOnly: false,
       color: 'bg-slate-100 text-slate-400'
     },
     {
@@ -44,9 +49,19 @@ const ModuleSelection: React.FC<ModuleSelectionProps> = ({ onSelect, user, onOpe
       desc: 'Tableau de bord durabilité et impact environnemental.',
       icon: Leaf,
       active: false,
+      adminOnly: false,
       color: 'bg-slate-100 text-slate-400'
+    },
+    {
+      id: 'admin' as const,
+      title: 'Administration',
+      desc: 'Gestion des utilisateurs, accès et envoi des invitations.',
+      icon: ShieldCheck,
+      active: true,
+      adminOnly: true,
+      color: 'bg-slate-800 text-white'
     }
-  ];
+  ].filter(m => !m.adminOnly || isAdmin);
 
   return (
     <div className="min-h-screen bg-white flex flex-col items-center justify-center p-4 md:p-8 relative overflow-x-hidden">

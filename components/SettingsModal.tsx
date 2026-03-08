@@ -200,7 +200,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
                 <div className="space-y-2 sm:space-y-3">
                   <label className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Identifiant</label>
-                  <input type="email" readOnly className="w-full h-12 sm:h-14 px-5 sm:px-6 bg-slate-100 border border-slate-200 rounded-xl sm:rounded-2xl text-sm font-bold text-slate-400 cursor-not-allowed" value={profileData.email} />
+                  <input type="text" readOnly className="w-full h-12 sm:h-14 px-5 sm:px-6 bg-slate-100 border border-slate-200 rounded-xl sm:rounded-2xl text-sm font-bold text-slate-400 cursor-not-allowed font-mono" value={profileData.email.replace('@mcfo.app', '')} />
                 </div>
                 <button type="submit" className="w-full sm:w-auto flex items-center justify-center gap-3 sm:gap-4 px-8 sm:px-10 py-4 sm:py-5 bg-[#264f36] text-white rounded-xl sm:rounded-[1.25rem] text-[10px] sm:text-[11px] font-black uppercase tracking-widest shadow-xl shadow-[#264f36]/20 hover:bg-slate-900 transition-all">
                   <Save size={18} /> Sauvegarder

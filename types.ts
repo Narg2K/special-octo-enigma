@@ -103,3 +103,18 @@ export interface Inquiry {
   message: string;
   status?: 'new' | 'read' | 'resolved';
 }
+
+export interface UserProfile {
+  id: string;
+  identifiant: string;
+  firstName: string;
+  lastName: string;
+  realEmail: string;
+  role: string;
+  createdAt?: string;
+}
+
+export interface EmailTemplate {
+  subject: string;
+  body: string;
+}

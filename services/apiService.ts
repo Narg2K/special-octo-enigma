@@ -1,11 +1,20 @@
 
 import { createClient } from "@supabase/supabase-js";
-import { Employee, ActivityLog, Inquiry } from '../types';
+import { Employee, ActivityLog, Inquiry, UserProfile, EmailTemplate } from '../types';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+const SUPABASE_SERVICE_KEY = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY as string;
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+export const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+
+// Converts "Jean-Paul" → "jean.paul", strips accents
+const normalizeStr = (s: string) =>
+  s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+
+export const toIdentifiant = (firstName: string, lastName: string) =>
+  `${normalizeStr(firstName)}.${normalizeStr(lastName)}`;
 
 const toSqlDate = (dateVal?: any) => {
   if (!dateVal) return null;
@@ -21,18 +30,10 @@ const toSqlDate = (dateVal?: any) => {
 };
 
 export const apiService = {
-  async signIn(email: string, pass: string) {
+  // identifiant = "jean.dupont" → email = "jean.dupont@mcfo.app"
+  async signIn(identifiant: string, pass: string) {
+    const email = identifiant.trim().toLowerCase() + '@mcfo.app';
     return await supabase.auth.signInWithPassword({ email, password: pass });
-  },
-
-  async signUp(email: string, pass: string, firstName: string, lastName: string, role: string) {
-    return await supabase.auth.signUp({
-      email,
-      password: pass,
-      options: {
-        data: { first_name: firstName, last_name: lastName, role }
-      }
-    });
   },
 
   async signOut() {
@@ -160,5 +161,113 @@ export const apiService = {
 
   async submitInquiry(inquiry: Omit<Inquiry, 'id' | 'status' | 'created_at'>) {
     return await supabase.from('inquiries').insert([inquiry]);
-  }
+  },
+
+  // ── Admin functions ───────────────────────────────────────────────────────
+
+  async adminGetAllUsers(): Promise<UserProfile[]> {
+    const { data, error } = await supabaseAdmin
+      .from('profiles')
+      .select('*')
+      .order('created_at', { ascending: true });
+    if (error) throw error;
+    return (data || []).map(row => ({
+      id: row.id,
+      identifiant: row.identifiant || '',
+      firstName: row.first_name || '',
+      lastName: row.last_name || '',
+      realEmail: row.real_email || '',
+      role: row.role || 'Directeur',
+      createdAt: row.created_at,
+    }));
+  },
+
+  async adminCreateUser(
+    firstName: string,
+    lastName: string,
+    role: string,
+    realEmail: string,
+    tempPassword: string
+  ): Promise<UserProfile> {
+    const identifiant = toIdentifiant(firstName, lastName);
+    const supabaseEmail = `${identifiant}@mcfo.app`;
+
+    const { data, error } = await supabaseAdmin.auth.admin.createUser({
+      email: supabaseEmail,
+      password: tempPassword,
+      email_confirm: true,
+      user_metadata: { first_name: firstName, last_name: lastName, role },
+    });
+    if (error) throw error;
+
+    const userId = data.user.id;
+    const { error: profileError } = await supabaseAdmin.from('profiles').upsert({
+      id: userId,
+      first_name: firstName,
+      last_name: lastName,
+      role,
+      identifiant,
+      real_email: realEmail,
+    });
+    if (profileError) throw profileError;
+
+    return { id: userId, identifiant, firstName, lastName, realEmail, role };
+  },
+
+  async adminDeleteUser(userId: string) {
+    const { error: authErr } = await supabaseAdmin.auth.admin.deleteUser(userId);
+    if (authErr) throw authErr;
+    await supabaseAdmin.from('profiles').delete().eq('id', userId);
+  },
+
+  async adminUpdatePassword(userId: string, newPassword: string) {
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+      password: newPassword,
+    });
+    if (error) throw error;
+  },
+
+  async getEmailTemplate(): Promise<EmailTemplate> {
+    const { data } = await supabase
+      .from('app_settings')
+      .select('value')
+      .eq('key', 'invitation_email_template')
+      .single();
+    return data?.value || {
+      subject: 'Votre accès McFormation Store #0437',
+      body: 'Bonjour {prenom},\n\nVotre compte a été créé.\n\nIdentifiant : {identifiant}\nMot de passe temporaire : {password}\n\nConnexion : https://mcdo-console.vercel.app\n\nCordialement',
+    };
+  },
+
+  async saveEmailTemplate(template: EmailTemplate) {
+    const { error } = await supabase.from('app_settings').upsert({
+      key: 'invitation_email_template',
+      value: template,
+    });
+    if (error) throw error;
+  },
+
+  async sendInvitationEmail(to: string, template: EmailTemplate, vars: Record<string, string>) {
+    const RESEND_KEY = import.meta.env.VITE_RESEND_API_KEY as string;
+    const filled = (s: string) =>
+      Object.entries(vars).reduce((acc, [k, v]) => acc.replaceAll(`{${k}}`, v), s);
+
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${RESEND_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'McFormation <onboarding@resend.dev>',
+        to,
+        subject: filled(template.subject),
+        text: filled(template.body),
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.message || 'Erreur envoi email');
+    }
+  },
 };

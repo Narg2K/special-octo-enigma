@@ -8,6 +8,7 @@ import ActivityFeed from './components/ActivityFeed';
 import ModuleSelection, { ModuleType } from './components/ModuleSelection';
 import SettingsModal from './components/SettingsModal';
 import SupportModal from './components/SupportModal';
+import AdminPanel from './components/AdminPanel';
 import { Loader2, UserCircle, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { Role, GlobalCertConfig, ContractConfig, Employee, ActivityLog } from './types';
 import { apiService, supabase } from './services/apiService';
@@ -23,15 +24,11 @@ const formatToTitleCase = (str: string) => {
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isDataLoading, setIsDataLoading] = useState(true);
-  const [authView, setAuthView] = useState<'login' | 'signup'>('login');
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
-  const [email, setEmail] = useState('');
+  const [identifiant, setIdentifiant] = useState('');
   const [password, setPassword] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [selectedSignupRole, setSelectedSignupRole] = useState('Directeur');
   const [showPassword, setShowPassword] = useState(false);
 
   const [selectedModule, setSelectedModule] = useState<ModuleType | null>(null);
@@ -347,67 +344,65 @@ const App: React.FC = () => {
         <div className="bg-[#264f36] w-20 h-20 mx-auto p-4 rounded-3xl shadow-xl mb-8 flex items-center justify-center">
           <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/McDonald%27s_Golden_Arches.svg" alt="McDo" className="w-12 h-12 object-contain" />
         </div>
-        
-        <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tighter mb-8 leading-none">
-          {authView === 'login' ? 'Connexion' : 'Inscription'}
-        </h1>
-        
+
+        <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tighter mb-2 leading-none">Connexion</h1>
+        <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-8">McFormation Store #0437</p>
+
         <form className="space-y-4" onSubmit={async (e) => {
           e.preventDefault();
           if (authLoading) return;
           setAuthLoading(true);
           setAuthError(null);
           try {
-            if (authView === 'login') {
-              const { data, error } = await apiService.signIn(email, password);
-              if (error) throw error;
-              if (data?.user) {
-                await initializeUser(data.user.id, data.user.email || '');
-              }
-            } else {
-              const { error } = await apiService.signUp(email, password, firstName, lastName, selectedSignupRole);
-              if (error) throw error;
-              setAuthView('login');
-              alert("Succès ! Vous pouvez maintenant vous connecter.");
+            const { data, error } = await apiService.signIn(identifiant, password);
+            if (error) throw error;
+            if (data?.user) {
+              await initializeUser(data.user.id, data.user.email || '');
             }
-          } catch (err: any) { setAuthError(err.message || "Erreur d'authentification."); }
-          finally { setAuthLoading(false); }
+          } catch (err: any) {
+            setAuthError(err.message || "Identifiant ou mot de passe incorrect.");
+          } finally {
+            setAuthLoading(false);
+          }
         }}>
-          {authView === 'signup' && (
-            <>
-              <div className="grid grid-cols-2 gap-3">
-                <input placeholder="Prénom" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-sm outline-none focus:border-[#264f36]" value={firstName} onChange={e => setFirstName(e.target.value)} required />
-                <input placeholder="Nom" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-sm outline-none focus:border-[#264f36]" value={lastName} onChange={e => setLastName(e.target.value)} required />
-              </div>
-              <div className="relative">
-                <UserCircle className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
-                <select 
-                  className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-sm outline-none focus:border-[#264f36] appearance-none cursor-pointer"
-                  value={selectedSignupRole}
-                  onChange={e => setSelectedSignupRole(e.target.value)}
-                >
-                  <option value="Directeur">Directeur / Franchise</option>
-                  <option value="Admin">Administrateur Système</option>
-                  <option value="Manager">Manager de restaurant</option>
-                </select>
-              </div>
-            </>
-          )}
-          <input type="email" placeholder="Email" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-sm outline-none focus:border-[#264f36]" value={email} onChange={e => setEmail(e.target.value)} required />
           <div className="relative">
-            <input type={showPassword ? "text" : "password"} placeholder="Mot de passe" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-sm outline-none focus:border-[#264f36] pr-12" value={password} onChange={e => setPassword(e.target.value)} required />
+            <UserCircle className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+            <input
+              type="text"
+              placeholder="Identifiant (ex: jean.dupont)"
+              className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-sm outline-none focus:border-[#264f36] lowercase"
+              value={identifiant}
+              onChange={e => setIdentifiant(e.target.value.toLowerCase())}
+              autoComplete="username"
+              required
+            />
+          </div>
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="Mot de passe"
+              className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-sm outline-none focus:border-[#264f36] pr-12"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              autoComplete="current-password"
+              required
+            />
             <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#264f36] transition-colors">
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
           <button disabled={authLoading} type="submit" className="w-full py-4 bg-[#264f36] text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-slate-900 transition-all active:scale-95 flex items-center justify-center gap-3 disabled:opacity-50">
-            {authLoading ? <Loader2 className="animate-spin" size={20} /> : 'Valider'}
+            {authLoading ? <Loader2 className="animate-spin" size={20} /> : 'Se connecter'}
           </button>
-          {authError && <div className="p-3 bg-red-50 text-red-600 rounded-xl text-[10px] font-black uppercase flex items-center gap-2"><AlertCircle size={14}/> {authError}</div>}
+          {authError && (
+            <div className="p-3 bg-red-50 text-red-600 rounded-xl text-[10px] font-black uppercase flex items-center gap-2">
+              <AlertCircle size={14}/> {authError}
+            </div>
+          )}
         </form>
-        <button onClick={() => { setAuthView(authView === 'login' ? 'signup' : 'login'); setAuthError(null); }} className="mt-8 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-[#264f36] transition-colors">
-          {authView === 'login' ? "Nouvel accès ? Créer un compte" : "Déjà membre ? Se connecter"}
-        </button>
+        <p className="mt-8 text-[9px] text-slate-400 font-bold uppercase tracking-widest">
+          Accès réservé — Contactez votre administrateur
+        </p>
       </div>
     </div>
   );
@@ -422,6 +417,8 @@ const App: React.FC = () => {
         return <ActivityFeed logs={activityLogs} />;
       case 'archive':
         return <ArchiveList archivedEmployees={archivedEmployees} onRestore={handleRestoreFromArchive} onDelete={handleDeleteFromArchive} onUpdateReason={handleUpdateArchiveReason} />;
+      case 'admin':
+        return <AdminPanel />;
       default:
         return null;
     }
@@ -431,6 +428,8 @@ const App: React.FC = () => {
     <>
       {selectedModule === null ? (
         <ModuleSelection user={user} onSelect={(m) => setSelectedModule(m)} onLogout={handleLogout} onOpenSettings={() => setIsSettingsOpen(true)} onOpenSupport={() => setIsSupportOpen(true)} />
+      ) : selectedModule === 'admin' ? (
+        <AdminPanel onBack={() => setSelectedModule(null)} />
       ) : (
         <Layout activeTab={activeTab} setActiveTab={setActiveTab} user={user} onLogout={handleLogout} onOpenSettings={() => setIsSettingsOpen(true)} onOpenSupport={() => setIsSupportOpen(true)} onResetModule={() => setSelectedModule(null)}>
           {renderModuleContent()}
